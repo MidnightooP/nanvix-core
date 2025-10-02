@@ -120,6 +120,14 @@
 	#define PROC_FSS    124  /**< FPU Saved Status offset.       */
 	/**@}*/
 
+	/**
+	 *  @name Number of Users and Processes per user
+	 */
+	/**@{*/
+	#define USERS_MAX   10
+	#define UPROC_MAX   10
+	/**@}*/
+
 #ifndef _ASM_FILE_
 
 	/**
@@ -281,6 +289,7 @@
 	/* Forward definitions. */
 	EXTERN int shutting_down;
 	EXTERN struct process proctab[PROC_MAX];
+	EXTERN int uprocnb[USERS_MAX];
 	EXTERN struct process *curr_proc;
 	EXTERN struct process *last_proc;
 	EXTERN pid_t next_pid;

@@ -47,6 +47,11 @@ PUBLIC char idle_kstack[KSTACK_SIZE];
 PUBLIC struct process proctab[PROC_MAX];
 
 /**
+ * @brief Number of processes by user
+ */
+PUBLIC int uprocnb[USERS_MAX];
+
+/**
  * @brief Current running process.
  */
 PUBLIC struct process *curr_proc = IDLE;
@@ -122,6 +127,7 @@ PUBLIC void pm_init(void)
 	IDLE->chain = NULL;
 
 	nprocs++;
+	uprocnb[curr_proc->uid]++;
 
 	enable_interrupts();
 }

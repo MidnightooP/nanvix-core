@@ -22,9 +22,10 @@
 .PHONY: init
 .PHONY: shutdown
 .PHONY: test
+.PHONY: bomb
 
 # Builds everything.
-all: foobar init shutdown test
+all: foobar init shutdown test bomb
 
 # Builds foobar.
 foobar:
@@ -41,6 +42,10 @@ shutdown:
 # Builds test.
 test:
 	$(CC) $(CFLAGS) $(LDFLAGS) test/*.c -o $(SBINDIR)/test $(LIBDIR)/libc.a
+
+# Builds bomb
+bomb:
+	$(CC) $(CFLAGS) $(LDFLAGS) bomb/*.c -o $(SBINDIR)/bomb $(LIBDIR)/libc.a
 	
 # Cleans compilations files.
 clean:
@@ -48,4 +53,5 @@ clean:
 	@rm -f $(SBINDIR)/init
 	@rm -f $(SBINDIR)/shutdown
 	@rm -f $(SBINDIR)/test
+	@rm -f $(SBINDIR)/bomb
 	

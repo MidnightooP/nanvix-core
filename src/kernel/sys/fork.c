@@ -48,6 +48,9 @@ PUBLIC pid_t sys_fork(void)
 		return (-EAGAIN);
 
 #endif
+	
+	if ((uprocnb[curr_proc->uid] + 1 >= UPROC_MAX) && (!IS_SUPERUSER(curr_proc)))
+		return (-EAGAIN);
 
 	/* Search for a free process. */
 	for (proc = FIRST_PROC; proc <= LAST_PROC; proc++)
@@ -159,6 +162,7 @@ found:
 	curr_proc->nchildren++;
 
 	nprocs++;
+	uprocnb[proc->uid]++;
 
 	return (proc->pid);
 

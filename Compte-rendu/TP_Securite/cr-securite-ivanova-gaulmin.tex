@@ -1,0 +1,71 @@
+\documentclass[a4paper,11pt,french]{article}
+
+\usepackage[utf8]{inputenc}             
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[margin=3cm]{geometry}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\title{Architecture des Systèmes\\Compte-rendu Sécurité Nanvix}
+\author{Antonia IVANOVA\\Rémi GAULMIN}
+
+\begin{document}
+
+\maketitle
+
+\section{Crash système}
+
+Pour saturer la table des processus depuis n'importe quel utilisateur, il suffit de créer des processus sans s'arrêter avec une récursion infinie: c'est l'objectif de notre programme \texttt{bomb}.
+
+Afin de limiter le nombre de processus par utilisateur (sauf pour le super-utilisateur \texttt{root}), nous avons mis en place dans \texttt{/include/nanvix/pm.h}:
+
+\begin{itemize}
+  \item Une variable d'environnement \texttt{UPROC\_MAX} définissant le nombre maximum de processus par utilisateur,
+  \item Une variable d'environnement \texttt{USERS\_MAX} définissant le nombre maximum d'utilisateurs (variable arbitraire pour faciliter le contrôle des utilisateurs,
+  \item Un tableau nommé \texttt{uprocnb} qui enregistre le nombre de processus par utilisateur.
+\end{itemize}
+
+À chaque \texttt{fork}, on vérifie si le nombre maximum de processus pour l'utilisateur en question est dépassé: si c'est le cas, le \texttt{fork} est refusé.
+
+\section{Print Users}
+
+La commande \texttt{pu} a pour objectif d'afficher dans la console le nom des différents utilisateurs ainsi que leur user ID (uid) et leur group ID (gid).
+
+Pour extraire les noms de tous les utilisateurs ainsi que leurs uid et gid, nous parcourons le fichier \texttt{/etc/passwords} et nous affichons à la volée son contenu (à l'excéption du mot de passe des utilisateurs).
+
+\section{SU command}
+
+La commande \texttt{su} a pour objectif de permettre d'acquérir les droits d'un autre utilisateur ou de root.
+
+Une fois que l'utilisateur tape la commande \texttt{su <user>}, le système lui demande de rentrer un mot de passe. Si celui ci est correct, l'utilisateur peut acquérir les droits de <user>. Pour cela, sont uid et gid effectifs sont modifiés.
+
+Nous faisons la verification du mot de passe avec la fonction \texttt{autentification()} qui a est implémentée pour la première fois dans le ficher \texttt{login.c}.
+
+\section{Création d'une nouvelle commande passwd}
+
+La commande \texttt{passwd} a pour objectif de permettre à un utilisateur de changer de mot de passe pour sa session.
+
+L'algorithme qu'on a utilisé pour implémenter la commande \texttt{passwd} est le suivant :
+\begin{enumerate}
+	\item On lit l'intégralité des noms d'utilisateurs et mots de passes du fichier \texttt{/etc/passwords/}.
+	\item On stoque à la volée ces derniers dans un tableau.
+	\item On change dans ce tableau le mot de passe de l'utilisateur qui a lancé la commande \texttt{passwd}.
+	\item On recopie le tabeau (avec le nouveau mot de passe) dans le fichier \texttt{/etc/passwords} en écrasant son précédant contenu.
+\end{enumerate}
+
+Nous faisons la verification du mot de passe avec la fonction \texttt{autentification()} qui a est implémentée pour la première fois dans le ficher \texttt{login.c}.
+
+Nous prenons le soin de demander à l'utilisateur de rentrer deux fois sont mot de passe. Le changement n'est evidemment pas effectué si les deux versions du mot de passe différent.
+
+\section{Crack password}
+
+En utilisant la commande \texttt{su --crack <user>}, le programme \texttt{crack} teste toutes les combinaisons de mot de passe constituées de lettres majuscules ou minuscules jusqu'à une longueur max arbitraire (définie dans notre code à 4).
+
+On remarque que craquer un mot de passe de longueur 3 est encore faisable mais à partir de 4, cela devient trop long et donc difficile à craquer (en tout cas sous \texttt{bochs} et avec notre puissance de calcul).
+
+\end{document}

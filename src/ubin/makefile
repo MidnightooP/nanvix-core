@@ -28,6 +28,9 @@
 .PHONY: kill
 .PHONY: ln
 .PHONY: login
+.PHONY: su
+.PHONY: pu
+.PHONY: passwd
 .PHONY: ls
 .PHONY: mkdir
 .PHONY: mv
@@ -45,7 +48,7 @@
 .PHONY: sleep
 
 # Builds everything.
-all: cat chgrp chmod chown cp echo kill ln login ls mv nice pwd rm stat sync \
+all: cat chgrp chmod chown cp echo kill ln login pu su passwd ls mv nice pwd rm stat sync \
 	 touch tsh ps clear nim sleep
 
 # Builds cat.
@@ -84,6 +87,18 @@ ln:
 login: 
 	$(CC) $(CFLAGS) $(LDFLAGS) login/*.c -o $(UBINDIR)/login $(LIBDIR)/libc.a
 	
+# Builds su.
+su: 
+	$(CC) $(CFLAGS) $(LDFLAGS) su/*.c -o $(UBINDIR)/su $(LIBDIR)/libc.a
+
+# Builds pu.
+pu: 
+	$(CC) $(CFLAGS) $(LDFLAGS) pu/*.c -o $(UBINDIR)/pu $(LIBDIR)/libc.a
+
+# Builds passwd.
+passwd: 
+	$(CC) $(CFLAGS) $(LDFLAGS) passwd/*.c -o $(UBINDIR)/passwd $(LIBDIR)/libc.a
+
 # Builds ls.
 ls: 
 	$(CC) $(CFLAGS) $(LDFLAGS) ls/*.c -o $(UBINDIR)/ls $(LIBDIR)/libc.a
@@ -156,6 +171,9 @@ clean:
 	@rm -f $(UBINDIR)/kill
 	@rm -f $(UBINDIR)/ln
 	@rm -f $(UBINDIR)/login
+	@rm -f $(UBINDIR)/su
+	@rm -f $(UBINDIR)/pu
+	@rm -f $(UBINDIR)/passwd
 	@rm -f $(UBINDIR)/ls
 	@rm -f $(UBINDIR)/mkdir
 	@rm -f $(UBINDIR)/mv

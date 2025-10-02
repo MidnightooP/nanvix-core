@@ -122,4 +122,5 @@ PUBLIC void bury(struct process *proc)
 	proc->state = PROC_DEAD;
 	proc->father->nchildren--;
 	nprocs--;
+	uprocnb[proc->uid]--;
 }
