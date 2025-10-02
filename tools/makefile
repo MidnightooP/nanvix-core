@@ -1,5 +1,5 @@
-# 
-# Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com> 
+#
+# Copyright(C) 2011-2016 Pedro H. Penna <pedrohenriquepenna@gmail.com>
 #
 # This file is part of Nanvix.
 #
@@ -17,22 +17,84 @@
 # along with Nanvix.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#
+# Change this to zero if you wanna a
+# non-educational version of the system.
+#
+export EDUCATIONAL_KERNEL=1
+
+# Target Architecture
+export ARCH := i486
+
+# Directories.
+export BINDIR   = $(CURDIR)/bin
+export SBINDIR  = $(BINDIR)/sbin
+export UBINDIR  = $(BINDIR)/ubin
+export DOCDIR   = $(CURDIR)/doc
+export INCDIR   = $(CURDIR)/include
+export LIBDIR   = $(CURDIR)/lib
+export DOXYDIR  = $(CURDIR)/doxygen
+export SRCDIR   = $(CURDIR)/src
+export TOOLSDIR = $(CURDIR)/tools
+export TOOLCHAIN_DIR ?= $(CURDIR)/toolchain
+
+# Toolchain
+export CC = $(TOOLCHAIN_DIR)/bin/$(ARCH)-elf-gcc
+export LD = $(TOOLCHAIN_DIR)/bin/$(ARCH)-elf-ld
+export AR = $(TOOLCHAIN_DIR)/bin/$(ARCH)-elf-ar
+
+# Random number for chaos.
+export KEY = 13
+
+# Toolchain configuration.
+export CFLAGS    = -g -I $(INCDIR)
+export CFLAGS   += -DKERNEL_HASH=$(KEY) -DEDUCATIONAL_KERNEL=$(EDUCATIONAL_KERNEL)
+export CFLAGS   += -std=c99 -pedantic-errors -fextended-identifiers
+export CFLAGS   += -nostdlib -nostdinc -fno-builtin -fno-stack-protector
+export CFLAGS   += -Wall -Wextra -Werror
+export CFLAGS   += -Wstack-usage=3192 -Wlogical-op
+export CFLAGS   += -Wredundant-decls -Wvla
+export ASMFLAGS  = -Wa,--divide,--warn
+export ARFLAGS   = -vq
+export LDFLAGS   = -Wl,-T $(LIBDIR)/link.ld
+
 # Resolves conflicts.
-.PHONY: build
-.PHONY: minix
+.PHONY: tools
 
 # Builds everything.
-all: minix build
+all: nanvix documentation
 
-# Builds Minix utilities.
-minix:
-	cd minix/ && $(MAKE) all
+# Builds Nanvix.
+nanvix:
+	mkdir -p $(BINDIR)
+	mkdir -p $(SBINDIR)
+	mkdir -p $(UBINDIR)
+	cd $(SRCDIR) && $(MAKE) all
 
-# Builds build utilities.
-build:
-	cd build/ && $(MAKE) all
+# Builds system's image.
+image: $(BINDIR)/kernel tools
+	mkdir -p $(BINDIR)
+	bash $(TOOLSDIR)/build/build-img.sh $(EDUCATIONAL_KERNEL) --build-iso
+
+# Builds documentation.
+documentation:
+	doxygen $(DOXYDIR)/kernel.config
+
+# Builds tools.
+tools:
+	mkdir -p $(BINDIR)
+	cd $(TOOLSDIR)/build && bash ./build-tools.sh
 
 # Cleans compilation files.
 clean:
-	cd build/ && $(MAKE) clean
-	cd minix/ && $(MAKE) clean
+	@rm -f *.img *.iso
+	@rm -rf $(BINDIR) nanvix-iso
+	@rm -rf $(DOCDIR)/*-kernel
+	cd $(SRCDIR) && $(MAKE) clean
+	cd $(TOOLSDIR) && $(MAKE) clean
+
+run-qemu:
+	bash $(TOOLSDIR)/run/qemu.sh "x86" "nanvix.iso" "--no-debug"
+
+debug-qemu:
+	bash $(TOOLSDIR)/run/qemu.sh "x86" "nanvix.iso" "--debug"
