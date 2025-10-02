@@ -264,6 +264,21 @@
 	 */
 	EXTERN int sys_gticks(void);
 
+	/*
+	 * Get a Semaphore associated to a key
+	 */
+	EXTERN int sys_semget(unsigned);
+
+	/*
+	 * Control operations on a Semaphore
+	 */
+	EXTERN int sys_semctl(int, int, int);
+
+	/*
+	 * Atomic operation on a Semaphore
+	 */
+	EXTERN int sys_semop(int, int);
+
 #endif /* _ASM_FILE_ */
 
 #endif /* NANVIX_SYSCALL_H_ */
