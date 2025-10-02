@@ -85,6 +85,7 @@ PUBLIC void yield(void)
 		if ((p->alarm) && (p->alarm < ticks))
 			p->alarm = 0, sndsig(p, SIGALRM);
 	}
+	
 
 	/* Choose a process to run next. */
 	next = IDLE;
@@ -94,22 +95,23 @@ PUBLIC void yield(void)
 		if (p->state != PROC_READY)
 			continue;
 
-		/*
-		 * Process with higher
-		 * waiting time found.
-		 */
-		if (p->counter > next->counter)
-		{
-			next->counter++;
-			next = p;
-		}
+		p->counter++; // Time to wait increased
 
-		/*
-		 * Increment waiting
-		 * time of process.
+		/* In order to prevent starvation,
+		 * a job that waited the longest time has priority.
 		 */
-		else
-			p->counter++;
+		int prioTimeP = p->priority - p->counter;
+		int prioTimeNext = next->priority - next->counter;
+		
+		if (	(next == IDLE) // IDLE must be replaced by a job waiting.
+			|| (prioTimeP < prioTimeNext) // Starvation prevention
+			|| (p->priority == next->priority
+				&& p->nice < next->nice) // If the priority is the same, let's consider the user priority
+			|| (p->priority == next->priority
+				&& p->nice == next->nice
+				&& p-> counter >= next->counter)// If the user priority is the same, Round Robin
+		   )
+			next = p;
 	}
 
 	/* Switch to next process. */
