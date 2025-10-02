@@ -1,0 +1,30 @@
+\section{Ordonnancement par tirage au sort}
+
+\subsection{Choix dans la politique d'ordonnancement}
+
+Pour cette partie, nous avons fait le choix d'implémenter la politique de la loterie selon l'algorithme suivant : 
+\\
+
+\begin{enumerate}
+	\item Chaque processus dans la file des prêts se présente et se voit attribuer un certain nombre de tickets de loterie (ce nombre est décidé de façon arbitraire). Le processus est ensuite rangé dans une liste.
+	\item Un nombre est aléatoirement tiré au sort entre 0 et le nombre total de tickets de loterie distribués (on appellera $x$ ce nombre).
+	\item Pour retrouver le processus qui a le ticket $x$, nous parcourons la liste où nous avons stocké nos processus dans l'ordre dans lequel ils sont arrivés.
+		\begin{itemize}
+			\item Si nous sommes au $i$-ème processus de notre liste qui possède k tickets, nous vérifions si $x \le [$somme du nombre de tickets des processus aux indices entre 0 et $i-1] + k$
+				\begin{itemize}
+					\item Si oui, nous sortons de la boucle
+					\item Sinon nous réitérons avec le $i+1$-ème élément
+				\end{itemize}
+		\end{itemize}
+	\item  Une fois que nous avons retrouvé le processus tiré au sort, on appelle la fonction \texttt{switch\_to()} avec comme argument ce processus. 
+\end{enumerate}
+
+\subsection{Les problèmes rencontrés}
+
+Même si nous essayons de faire fonctionner notre ordonnanceur (i.e. qu'il passe les tests correctement), nous avons un message \texttt{core dumped} qui persiste. 
+Nous n'arrivons pas à trouver la raison de ce message. 
+
+Nous avons exploré plusieurs pistes afin d'essayer de résoudre ce problème, notamment de revoir notre mécanisme de distribution de tickets. 
+En effet, comme ces derniers sont distribués en un nombre que nous avons fixés de façon arbitraire, nous nous sommes demandés si le problème ne venait pas de là. 
+Il semblerait que non puisque chaque processus a une chance non nulle d'obtenir le processus, peu importe donc le nombre non nul de tickets qu'on donne à un processus.
+

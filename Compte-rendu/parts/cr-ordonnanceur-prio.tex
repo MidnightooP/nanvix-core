@@ -1,0 +1,28 @@
+\section{Ordonnancement par priorités}
+
+\subsection{Choix dans la politique d'ordonnancement}
+
+Notre ordonnanceur à priorités gère deux niveaux de priorités pour un processus :
+
+\begin{itemize}
+	\item La priorité système, avec le champ \texttt{priority};
+	\item La priorité utilisateur, avec le champ \texttt{nice}.
+\end{itemize}
+
+Nous avons fait le choix de donner la priorité à la priorité système plutôt qu'à la priorité utilisateur.
+Les deux priorités fonctionnent de la même manière : plus le champ priorité est bas, plus le processus est prioritaire.
+\\
+
+Nous avons également pensé au problème que représente la famine : dans la politique d'ordonnancement par priorités, un processus prioritaire peut ne jamais donner la main aux autres processus.
+C'est pourquoi nous avons modifié légèrement la politique:
+
+On fait la soustraction de la priorité système par le temps d'attente de chaque processus : ainsi, le processus qui a attendu le plus en fonction de sa priorité système aura la main sur le processeur.
+À priorité système égale et temps d'attente égale, on considère la priorité utilisateur.
+À priorité utilisateur égale, on applique la politique d'ordonnancement de type tourniquet.
+\\
+
+\subsection{Les problèmes rencontrés}
+
+Nous avons passé beaucoup de temps sur cet ordonnanceur, car nous avions du mal à comprendre pourquoi nous obtenions le message \texttt{core dumped} sur notre première version d'implémentation.
+Ce message indiquait qu'il y avait des surcharges mémoires au niveau utilisateur.
+Cela était dû au fait que les compteurs d'attente des processus s'incrémentaient après l'analyse des priorités.

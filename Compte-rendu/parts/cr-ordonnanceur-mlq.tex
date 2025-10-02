@@ -1,0 +1,13 @@
+\section{Files d'attentes multiples}
+
+\subsection{Choix dans la politique d'ordonnancement}
+
+Notre ordonnanceur à files d'attentes multiples gère des catégories de priorités.
+Les catégories de priorités sont, dans l'ordre décroissant de priorité : 1, 2, 4, 16, 32 et 64.
+\\
+
+Afin de pouvoir se souvenir de la catégorie pour chaque processus, nous avons rajouté un champ à la structure \texttt{process}, nommé \texttt{mlqclass}, et initialisé dans les fonctions \texttt{sys\_fork} et \texttt{pm\_init}.
+
+Le principe est de multiplier par $2^{mlqclass}$ le quantum alloué à un processus.
+Ainsi, il nous suffit de trouver le processus avec la catégorie de priorité la plus faible, et s'il y en a plusieurs, appliquer la politique du tourniquet entre ces processus de même catégorie.
+

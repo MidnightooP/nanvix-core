@@ -1,0 +1,76 @@
+\documentclass[a4paper,11pt,french]{article}
+
+\usepackage[utf8]{inputenc}             
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[margin=3cm]{geometry}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{listings}
+
+\title{Architecture des Systèmes\\Compte-rendu Sémaphores Nanvix}
+\author{Antonia IVANOVA\\Rémi GAULMIN}
+
+\begin{document}
+
+\maketitle
+
+Notre code pour cette partie est sur la branche \texttt{sem}.
+
+URL Git : \url{https://gricad-gitlab.univ-grenoble-alpes.fr/ivanovan/AS.git}
+
+\section{Structure des sémaphores}
+
+Nos sémaphores sont composés des champs suivants : 
+\begin{itemize}
+	\item \texttt{bool isUsed}  -  indique si le sémaphore est utilisé ou non
+	\item \texttt{int key}  -   stocke la clé par laquelle les processus référencent le sémaphore
+	\item \texttt{int counter}  -  compteur de ressources libres (positif) / processus en attente du sémaphore (négatif)
+	\item \texttt{struct process** waitingHead}  -  liste chainée de processus en attente d'une ressource
+\end{itemize}
+
+Les sémaphores système sont stockés dans un tableau nommé \texttt{semtab} dans notre implémentation et sont au nombre arbitrairement choisi de $SEM\_MAX = 10$.
+
+Ci-après, les sections sur les fonctions pour les sémaphores système méritant quelques commentaires.
+
+\section{Fonction \texttt{sys\_semctl}}
+
+Dans cette fonction, il est à noter que lorsqu'un sémaphore est supprimé, tous les processus en attente sont réveillés afin d'éviter que les processus soient endormis indéfiniment.
+Cependant, cette solution est criticable: les processus réveillés penseront qu'ils ont acquis une ressource du sémaphore et risqueront de rentrer simultanément en section critique.
+
+Néanmoins nous savons que ce choix d'implémentation n'est pas à l'origine du bug majeur mentionné en dernière section de ce rapport.
+
+\section{Fonction \texttt{sys\_semop}}
+
+\subsection{Les fonctions \texttt{down()} et \texttt{up()}}
+
+\paragraph{\texttt{down()}}
+
+Cette fonction permet à un processus d'acquérir une ressource.
+
+Le compteur est immédiatement décrémenté (cette opération est atomique) signifiant la prise d'une ressource (si $counter > 0$) ou l'attente d'une ressource (si $counter \leq 0)$.
+S'il n'y a pas de ressource disponible, le processus s'endort.
+
+\paragraph{\texttt{up()}}
+
+Cette fonction permet à un processus de libérer une ressource dans le sémaphore. Elle ne doit être appelée qu'après un appel à la fonction \texttt{down()}.
+
+Le compteur est immédiatement incrémenté (cette opération est atomique).
+Si le compteur est inférieur à 0, on réveille le processus qui attend une ressource depuis le plus long temps (cela permet de garantir la propriété FIFO des sémaphores).
+Une fonction \texttt{wakeupone} a été rajoutée à cet effet dans le fichier \texttt{src/kernel/pm/sleep.c} et sa déclaration dans \texttt{include/nanvix/pm.h}.
+
+\section{Les problèmes rencontrés}
+
+Nous avons implémenté nos sémaphores, mais notre code ne passe pas le test \texttt{ipc}.
+Nous avons pourtant tenté plusieurs solutions pour résoudre le bug majeur :
+
+\begin{itemize}
+	\item Une revue de code en détail avec des camarades de classe 
+	\item Une revue de code avec l'enseignant
+	\item Nous avons comparé notre code avec celui de camarades pour qui les sémaphores fonctionnent
+\end{itemize}
+
+Le problème vient de l'initialisation des champs \texttt{int} de la structure \texttt{struct semaphore}, mais nous n'avons pas réussi à en identifier la cause.
+
+\end{document}

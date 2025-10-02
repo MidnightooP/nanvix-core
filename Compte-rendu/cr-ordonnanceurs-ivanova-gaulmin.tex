@@ -1,0 +1,45 @@
+\documentclass[a4paper,11pt,french]{article}
+
+\usepackage[utf8]{inputenc}             
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[margin=3cm]{geometry}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{listings}
+
+\title{Architecture des Systèmes\\Compte-rendu Ordonnanceurs Nanvix}
+\author{Antonia IVANOVA\\Rémi GAULMIN}
+
+\begin{document}
+\lstset{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=C,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\maketitle
+
+\tableofcontents
+
+\include{parts/cr-ordonnanceur-prio.tex}
+
+\include{parts/cr-ordonnanceur-mlq.tex}
+
+\include{parts/cr-ordonnanceur-lot.tex}
+
+\section{Les tests}
+
+Nous avons rajouté un test (\texttt{sched\_test4()}) qui prend deux processus (le père et le fils) avec des champs nice différents. Lorque le processus finit son exécution, il affiche un message pour indiquer qu'il a fini.
+
+Il est à noter que nous avons rajouté ce test dans toutes les versions de notre ordonnanceur.
+
+\end{document}
