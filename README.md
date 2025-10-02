@@ -8,11 +8,7 @@ This repository hosts a version of Nanvix modified by
 
 This work takes place in the class *Architecture des Systèmes* in Polytech Grenoble for the INFO4 students
 
-In the `main` branch you can find the original, cloned version of Nanvix.
-You can find different schedulers on different branches:
-- On branch `prio-sched`: Priority Scheduling
-- On branch `mlq-sched`: Multiple Queues Scheduling
-- On branch `sched-lod`: Lottery Scheduling
+You are in the `sched-lot` branch where the lottery scheduler is implemented.
 
 ## What Is Nanvix?
 

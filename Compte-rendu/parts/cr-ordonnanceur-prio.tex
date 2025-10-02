@@ -21,6 +21,82 @@ On fait la soustraction de la priorité système par le temps d'attente de chaqu
 À priorité utilisateur égale, on applique la politique d'ordonnancement de type tourniquet.
 \\
 
+\subsection{Implémentation de la politique}
+
+Ci-après, le code de la politique :
+
+\begin{lstlisting}
+/**
+ * @brief Yields the processor.
+ */
+PUBLIC void yield(void)
+{
+	struct process *p;    /* Working process.     */
+	struct process *next; /* Next process to run. */
+
+	/* Re-schedule process for execution. */
+	if (curr_proc->state == PROC_RUNNING)
+		sched(curr_proc);
+
+	/* Remember this process. */
+	last_proc = curr_proc;
+
+	/* Check alarm. */
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip invalid processes. */
+		if (!IS_VALID(p))
+			continue;
+
+		/* Alarm has expired. */
+		if ((p->alarm) && (p->alarm < ticks))
+			p->alarm = 0, sndsig(p, SIGALRM);
+	}
+	
+
+	/* Choose a process to run next. */
+	next = IDLE;
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip non-ready process. */
+		if (p->state != PROC_READY)
+			continue;
+
+		p->counter++; // Time to wait increased
+
+		/* In order to prevent starvation,
+		 * a job that waited the longest
+		 * time has priority.
+		 */
+		int prioTimeP = p->priority - p->counter;
+		int prioTimeNext = next->priority - next->counter;
+
+			// IDLE must be replaced by a job waiting.
+		if (	(next == IDLE)
+			   // Starvation prevention
+			|| (prioTimeP < prioTimeNext)
+			   // If the priority is the same,
+			   // let's consider the user priority
+			|| (p->priority == next->priority
+				&& p->nice < next->nice)
+			   // If the user priority is the same,
+			   // Round Robin
+			|| (p->priority == next->priority
+				&& p->nice == next->nice
+				&& p-> counter >= next->counter)
+		   )
+			next = p;
+	}
+
+	/* Switch to next process. */
+	next->priority = PRIO_USER;
+	next->state = PROC_RUNNING;
+	next->counter = PROC_QUANTUM;
+	if (curr_proc != next)
+		switch_to(next);
+}
+\end{lstlisting}
+
 \subsection{Les problèmes rencontrés}
 
 Nous avons passé beaucoup de temps sur cet ordonnanceur, car nous avions du mal à comprendre pourquoi nous obtenions le message \texttt{core dumped} sur notre première version d'implémentation.

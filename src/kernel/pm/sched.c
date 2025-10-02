@@ -22,7 +22,9 @@
 #include <nanvix/const.h>
 #include <nanvix/hal.h>
 #include <nanvix/pm.h>
+#include <nanvix/klib.h>
 #include <signal.h>
+#include <stdlib.h>
 
 /**
  * @brief Schedules a process to execution.
@@ -59,6 +61,27 @@ PUBLIC void resume(struct process *proc)
 		sched(proc);
 }
 
+PRIVATE unsigned chooseNbTickets(struct process *p) {
+	switch(p->priority) {
+		case PRIO_IO:
+			return 70;
+		case PRIO_BUFFER:
+			return 60;
+		case PRIO_INODE:
+			return 50;
+		case PRIO_SUPERBLOCK:
+			return 40;
+		case PRIO_REGION:
+			return 30;
+		case PRIO_TTY:
+			return 20;
+		case PRIO_SIG:
+			return 10;
+		default:
+			return 5;
+	}
+}
+
 /**
  * @brief Yields the processor.
  */
@@ -74,7 +97,12 @@ PUBLIC void yield(void)
 	/* Remember this process. */
 	last_proc = curr_proc;
 
-	/* Check alarm. */
+	/* Lottery */
+	struct process* lottery[PROC_MAX];
+	int i = 0;
+	unsigned sizeLottery = 0;
+
+	/* Check alarm. (+ init lottery)*/
 	for (p = FIRST_PROC; p <= LAST_PROC; p++)
 	{
 		/* Skip invalid processes. */
@@ -84,32 +112,30 @@ PUBLIC void yield(void)
 		/* Alarm has expired. */
 		if ((p->alarm) && (p->alarm < ticks))
 			p->alarm = 0, sndsig(p, SIGALRM);
-	}
 
-	/* Choose a process to run next. */
-	next = IDLE;
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-	{
-		/* Skip non-ready process. */
+		/****** Lottery part ************/
 		if (p->state != PROC_READY)
 			continue;
 
-		/*
-		 * Process with higher
-		 * waiting time found.
-		 */
-		if (p->counter > next->counter)
-		{
-			next->counter++;
-			next = p;
-		}
+		lottery[i] = p;
+		i++;
+		sizeLottery += chooseNbTickets(p);
+		/****** End of lottery part ******/
+	}
 
-		/*
-		 * Increment waiting
-		 * time of process.
-		 */
-		else
-			p->counter++;
+	unsigned counterPrio = 0;
+	unsigned randProc = sizeLottery <= 0 ? 0 : krand() % sizeLottery;
+
+	/* Choose a process to run next. */
+	next = IDLE;
+	for(int j = 0; j < i; j++)
+	{
+		p = lottery[j];
+		counterPrio += chooseNbTickets(p);
+		if (counterPrio > randProc) {
+			next = p;
+			break;
+		}
 	}
 
 	/* Switch to next process. */

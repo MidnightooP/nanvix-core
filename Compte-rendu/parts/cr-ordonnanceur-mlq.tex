@@ -11,3 +11,130 @@ Afin de pouvoir se souvenir de la catégorie pour chaque processus, nous avons r
 Le principe est de multiplier par $2^{mlqclass}$ le quantum alloué à un processus.
 Ainsi, il nous suffit de trouver le processus avec la catégorie de priorité la plus faible, et s'il y en a plusieurs, appliquer la politique du tourniquet entre ces processus de même catégorie.
 
+\subsection{Implémentation de la politique}
+
+Ci-après, le code de la politique :
+\\
+
+\texttt{pm.h} :
+
+\begin{lstlisting}
+struct process
+{
+...
+    	/**
+    	 * @name Scheduling information
+    	 */
+		/**@{*/
+    	unsigned state;          /**< Current state.          */
+    	int counter;             /**< Remaining quantum.      */
+    	int priority;            /**< Process priorities.     */
+    	int nice;                /**< Nice for scheduling.    */
+    	unsigned alarm;          /**< Alarm.                  */
+	char mlqclass;		 /**< Priority Class
+		struct process *next;    /**< Next process in a list. */
+		struct process **chain;  /**< Sleeping chain.         */
+		/**@}*/
+};
+\end{lstlisting}
+
+\texttt{pm.c} :
+
+\begin{lstlisting}
+PUBLIC void pm_init(void)
+{
+	...
+	IDLE->counter = PROC_QUANTUM;
+	IDLE->priority = PRIO_USER;
+	IDLE->nice = NZERO;
+	IDLE->alarm = 0;
+	/**/
+	IDLE->mlqclass = 0;
+	/**/
+	IDLE->next = NULL;
+	IDLE->chain = NULL;
+	...
+}
+\end{lstlisting}
+
+\texttt{fork.c} :
+
+\begin{lstlisting}
+PUBLIC pid_t sys_fork(void)
+{
+	...
+	proc->priority = curr_proc->priority;
+	proc->nice = curr_proc->nice;
+	proc->alarm = 0;
+	/**/
+	proc->mlqclass = 0;
+	/**/
+	proc->next = NULL;
+	proc->chain = NULL;
+	...
+}
+\end{lstlisting}
+
+\texttt{sched.c} :
+
+\begin{lstlisting}
+/**
+ * @brief Yields the processor.
+ */
+PUBLIC void yield(void)
+{
+	struct process *p;    /* Working process.     */
+	struct process *next; /* Next process to run. */
+
+	/* Re-schedule process for execution. */
+	if (curr_proc->state == PROC_RUNNING)
+		sched(curr_proc);
+
+	/* If the quantum is consumed, the priority class is increased */
+	if (curr_proc->counter == 0 && curr_proc->mlqclass < 6)
+		curr_proc->mlqclass++;
+
+	/* Remember this process. */
+	last_proc = curr_proc;
+
+	/* Check alarm. */
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip invalid processes. */
+		if (!IS_VALID(p))
+			continue;
+
+		/* Alarm has expired. */
+		if ((p->alarm) && (p->alarm < ticks))
+			p->alarm = 0, sndsig(p, SIGALRM);
+	}
+
+	/* Choose a process to run next. */
+	next = IDLE;
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip non-ready process. */
+		if (p->state != PROC_READY)
+			continue;
+
+		p->counter++;
+
+			// IDLE must be replaced by a job waiting.
+		if (	(next == IDLE)
+			|| (p->mlqclass < next->mlqclass)
+			   // If the priority class is the same,
+			   // Round Robin
+			|| (p->mlqclass == next->mlqclass
+				&& p->counter > next->counter)
+		   )
+			next = p;
+	}
+
+	/* Switch to next process. */
+	next->priority = PRIO_USER;
+	next->state = PROC_RUNNING;
+	next->counter = PROC_QUANTUM*(2^next->mlqclass);
+	if (curr_proc != next)
+		switch_to(next);
+}
+\end{lstlisting}
